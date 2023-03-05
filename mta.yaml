@@ -1,0 +1,62 @@
+_schema-version: "3.2"
+ID: dmsreuseui
+version: 0.0.1
+modules:
+- name: dmsreuseui-approuter
+  type: approuter.nodejs
+  path: dmsreuseui-approuter
+  requires:
+  - name: dmsreuseui_html_repo_runtime
+  - name: dms-instance
+    properties: 
+      destinations: "[{\"name\": \"sdibackend\", \"url\": \"https://api-sdm-di.cfapps.us10.hana.ondemand.com/\", \"forwardAuthToken\": true}]"
+  parameters:
+    disk-quota: 256M
+    memory: 256M
+
+- name: html5-deployer
+  type: com.sap.application.content
+  path: ./.
+  requires:
+  - name: dmsreuseui_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+   build-result: resources
+   requires:
+    - artifacts:
+        - nsHTML5Module.zip
+      name: nsHTML5Module
+      target-path: resources/   
+
+- name: nsHTML5Module
+  type: html5
+  path: HTML5Module
+  build-parameters:
+     build-result: dist
+     builder: custom
+     commands:
+      - npm install
+      - npm run build:cf
+     supported-platforms: []
+resources:
+- name: dmsreuseui_html_repo_runtime
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-runtime
+- name: dmsreuseui_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-host
+- name: dms-instance
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: sdm
+    service-plan: standard
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install
